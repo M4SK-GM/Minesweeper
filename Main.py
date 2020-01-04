@@ -128,6 +128,7 @@ class Board:
             self.on_click(cell)
 
     def open_cell(self, cell):
+        global count_flag
         x, y = cell
         if self.board[x][y] == 10:
             End_Screen()
@@ -142,6 +143,13 @@ class Board:
                     continue
                 elif self.board[x + i][y + j] == 10:
                     summa += 1
+                if self.mark_board[x + i][y + j] == 1:
+                    self.mark_board[x + i][y + j] = 0
+                    for flag in all_sprites:
+                        x1, y1 = self.get_cell((flag.rect.x, flag.rect.y))
+                        if x + i == x1 and y + j == y1:
+                            pygame.sprite.Sprite.kill(flag)
+                    count_flag -= 1
         self.board[x][y] = summa
 
         if summa == 0:
