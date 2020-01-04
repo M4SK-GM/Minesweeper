@@ -84,6 +84,33 @@ def End_Screen():
         clock.tick(fps)
 
 
+def Win_Screen():
+    intro_text = ["Победа!!", "",
+                  "Вы справились!"]
+
+    fon = pygame.transform.scale(load_image('fon.jpg'), (width, height))
+    screen.blit(fon, (0, 0))
+    font = pygame.font.Font(None, 30)
+    text_coord = 50
+    for line in intro_text:
+        string_rendered = font.render(line, 1, pygame.Color('black'))
+        intro_rect = string_rendered.get_rect()
+        text_coord += 10
+        intro_rect.top = text_coord
+        intro_rect.x = 10
+        text_coord += intro_rect.height
+        screen.blit(string_rendered, intro_rect)
+
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                terminate()
+            elif event.type == pygame.KEYDOWN or event.type == pygame.MOUSEBUTTONDOWN:
+                terminate()
+        pygame.display.flip()
+        clock.tick(fps)
+
+
 class Board:
     # создание поля
     def __init__(self, width, height):
@@ -223,6 +250,16 @@ class Minesweeper(Board):
                     pygame.sprite.Sprite.kill(flag)
             count_flag -= 1
 
+    def check_win(self):
+        if count_flag != self.num_bomb:
+            return
+        for i in range(self.width):
+            for j in range(self.height):
+                if self.board[i][j] == 10:
+                    if self.mark_board[i][j] != 1:
+                        return
+        Win_Screen()
+
 
 all_sprites = pygame.sprite.Group()
 mineboard = Minesweeper(10, 10, 20)
@@ -248,6 +285,7 @@ while running:
                     continue
                 mineboard.mark_cell(event.pos)
     all_sprites.draw(screen)
+    mineboard.check_win()
     mineboard.render()
     pygame.display.flip()
 
