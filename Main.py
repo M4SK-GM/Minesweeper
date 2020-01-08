@@ -170,13 +170,6 @@ class Board:
                     continue
                 elif self.board[x + i][y + j] == 10:
                     summa += 1
-                if self.mark_board[x + i][y + j] == 1:
-                    self.mark_board[x + i][y + j] = 0
-                    for flag in all_sprites:
-                        x1, y1 = self.get_cell((flag.rect.x, flag.rect.y))
-                        if x + i == x1 and y + j == y1:
-                            pygame.sprite.Sprite.kill(flag)
-                    count_flag -= 1
         self.board[x][y] = summa
 
         if summa == 0:
@@ -185,6 +178,13 @@ class Board:
                     if x + i >= self.width or x + i < 0 or y + j >= self.height or y + j < 0:
                         continue
                     if self.board[x + i][y + j] == -1:
+                        if self.mark_board[x + i][y + j] == 1:
+                            self.mark_board[x][y] = 0
+                            for flag in all_sprites:
+                                x1, y1 = self.get_cell((flag.rect.x, flag.rect.y))
+                                if x == x1 and y == y1:
+                                    pygame.sprite.Sprite.kill(flag)
+                            count_flag -= 1
                         self.open_cell((x + i, y + j))
 
 
@@ -218,12 +218,6 @@ class Minesweeper(Board):
                     flag.rect = flag.image.get_rect()
                     flag.rect.x = self.cell_size * i + self.left
                     flag.rect.y = self.cell_size * j + self.top
-                elif self.board[i][j] == 10:
-                    bomb = pygame.sprite.Sprite(all_sprites)
-                    bomb.image = bomb_image
-                    bomb.rect = bomb.image.get_rect()
-                    bomb.rect.x = self.cell_size * i + self.left
-                    bomb.rect.y = self.cell_size * j + self.top
                 elif self.mark_board[i][j] == 0:
                     pygame.draw.rect(screen, (0, 0, 0),
                                      (self.cell_size * i + self.left, self.cell_size * j + self.top, self.cell_size - 2,
@@ -262,7 +256,7 @@ class Minesweeper(Board):
 
 
 all_sprites = pygame.sprite.Group()
-mineboard = Minesweeper(10, 10, 20)
+mineboard = Minesweeper(10, 10, 10)
 size = width, height = 1000, 1000
 screen = pygame.display.set_mode(size)
 running = True
