@@ -157,10 +157,10 @@ class Board:
     def open_cell(self, cell):
         global count_flag
         x, y = cell
+        if self.mark_board[x][y] == 1 or self.mark_board[x][y] == -1:
+            return
         if self.board[x][y] == 10:
             End_Screen()
-        if self.mark_board[x][y] == 1:
-            return
         summa = 0
         for i in range(-1, 2):
             for j in range(-1, 2):
@@ -179,12 +179,18 @@ class Board:
                         continue
                     if self.board[x + i][y + j] == -1:
                         if self.mark_board[x + i][y + j] == 1:
-                            self.mark_board[x][y] = 0
+                            self.mark_board[x + i][y + j] = 0
                             for flag in all_sprites:
                                 x1, y1 = self.get_cell((flag.rect.x, flag.rect.y))
-                                if x == x1 and y == y1:
+                                if x + i == x1 and y + j == y1:
                                     pygame.sprite.Sprite.kill(flag)
                             count_flag -= 1
+                        elif self.mark_board[x + i][y + j] == -1:
+                            self.mark_board[x + i][y + j] = 0
+                            for unready in all_sprites:
+                                x1, y1 = self.get_cell((unready.rect.x, unready.rect.y))
+                                if x + i == x1 and y + j == y1:
+                                    pygame.sprite.Sprite.kill(unready)
                         self.open_cell((x + i, y + j))
 
 
@@ -198,6 +204,8 @@ class Minesweeper(Board):
         self.num_bomb = n
 
     def generate_board(self, position):
+        if self.get_cell(position) is None:
+            return False
         x, y = self.get_cell(position)
         i = 0
         while i != self.num_bomb:
@@ -206,10 +214,26 @@ class Minesweeper(Board):
             if self.board[randy][randx] == -1 and (randx != x and randy != y):
                 i += 1
                 self.board[randy][randx] = 10
+        return True
 
     def render(self):
+        # Перечисление ресурсов
         bomb_image = load_image("Bomb.png", -1)
         flag_image = load_image("flag.png", -1)
+        unready_image = load_image("unready.png", -1)
+        # Текст с оставшимися флажками
+        font = pygame.font.Font(None, 50)
+        text = font.render(str(self.num_bomb - count_flag), 1, (255, 255, 255))
+        text_x = self.cell_size * self.width + self.top + 50
+        text_y = 10
+        text_w = text.get_width()
+        text_h = text.get_height()
+        screen.blit(text, (text_x, text_y))
+        flag = pygame.sprite.Sprite(ui_sprites)
+        flag.image = flag_image
+        flag.rect = flag.image.get_rect()
+        flag.rect.x = self.cell_size * self.width + self.top + 20
+        flag.rect.y = 10
         for i in range(self.width):
             for j in range(self.height):
                 if self.mark_board[i][j] == 1:
@@ -218,6 +242,12 @@ class Minesweeper(Board):
                     flag.rect = flag.image.get_rect()
                     flag.rect.x = self.cell_size * i + self.left
                     flag.rect.y = self.cell_size * j + self.top
+                elif self.mark_board[i][j] == -1:
+                    unready = pygame.sprite.Sprite(all_sprites)
+                    unready.image = unready_image
+                    unready.rect = unready.image.get_rect()
+                    unready.rect.x = self.cell_size * i + self.left
+                    unready.rect.y = self.cell_size * j + self.top
                 elif self.mark_board[i][j] == 0:
                     pygame.draw.rect(screen, (0, 0, 0),
                                      (self.cell_size * i + self.left, self.cell_size * j + self.top, self.cell_size - 2,
@@ -232,17 +262,29 @@ class Minesweeper(Board):
 
     def mark_cell(self, position):
         global count_flag
+        if self.get_cell(position) is None:
+            return
         x, y = self.get_cell(position)
         if self.mark_board[x][y] == 0 and not (0 < self.board[x][y] < 10):
             self.mark_board[x][y] = 1
             count_flag += 1
-        else:
-            self.mark_board[x][y] = 0
+        elif self.mark_board[x][y] == 1:
+            self.mark_board[x][y] = -1
             for flag in all_sprites:
+                if self.get_cell((flag.rect.x, flag.rect.y)) is None:
+                    continue
                 x1, y1 = self.get_cell((flag.rect.x, flag.rect.y))
                 if x == x1 and y == y1:
                     pygame.sprite.Sprite.kill(flag)
             count_flag -= 1
+        else:
+            self.mark_board[x][y] = 0
+            for unready in all_sprites:
+                if self.get_cell((unready.rect.x, unready.rect.y)) is None:
+                    continue
+                x1, y1 = self.get_cell((unready.rect.x, unready.rect.y))
+                if x == x1 and y == y1:
+                    pygame.sprite.Sprite.kill(unready)
 
     def check_win(self):
         if count_flag != self.num_bomb:
@@ -256,6 +298,7 @@ class Minesweeper(Board):
 
 
 all_sprites = pygame.sprite.Group()
+ui_sprites = pygame.sprite.Group()
 mineboard = Minesweeper(10, 10, 10)
 size = width, height = 1000, 1000
 screen = pygame.display.set_mode(size)
@@ -271,14 +314,15 @@ while running:
         if event.type == pygame.MOUSEBUTTONDOWN:
             if event.button == 1:
                 if not boardready:
-                    mineboard.generate_board(event.pos)
-                    boardready = True
+                    boardready = mineboard.generate_board(event.pos)
                 mineboard.get_click(event.pos)
             elif event.button == 3:
                 if not boardready:
                     continue
                 mineboard.mark_cell(event.pos)
+    screen.fill(pygame.Color('black'))
     all_sprites.draw(screen)
+    ui_sprites.draw(screen)
     mineboard.check_win()
     mineboard.render()
     pygame.display.flip()
