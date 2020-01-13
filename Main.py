@@ -1,5 +1,4 @@
-import pygame, random, sys, os
-from copy import deepcopy
+import pygame, random, sys, os, time
 
 fps = 5
 clock = pygame.time.Clock()
@@ -85,6 +84,8 @@ def End_Screen():
 
 
 def Win_Screen():
+    tit2 = time.time()
+    print(tit2 - tit1)
     intro_text = ["Победа!!", "",
                   "Вы справились!"]
 
@@ -307,6 +308,7 @@ boardready = False
 count_flag = 0
 start_screen()
 screen.fill(pygame.Color('black'))
+tit1 = time.time()
 while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
