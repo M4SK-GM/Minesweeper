@@ -42,7 +42,7 @@ def start_screen():
     font = pygame.font.Font(None, 30)
     text_coord = 50
     for line in intro_text:
-        string_rendered = font.render(line, 1, pygame.Color('black'))
+        string_rendered = font.render(line, 1, pygame.Color('Black'))
         intro_rect = string_rendered.get_rect()
         text_coord += 10
         intro_rect.top = text_coord
@@ -69,7 +69,7 @@ def End_Screen():
     font = pygame.font.Font(None, 30)
     text_coord = 50
     for line in intro_text:
-        string_rendered = font.render(line, 1, pygame.Color('black'))
+        string_rendered = font.render(line, 1, pygame.Color('Black'))
         intro_rect = string_rendered.get_rect()
         text_coord += 10
         intro_rect.top = text_coord
@@ -114,7 +114,7 @@ def Win_Screen():
     font = pygame.font.Font(None, 30)
     text_coord = 50
     for line in intro_text:
-        string_rendered = font.render(line, 1, pygame.Color('black'))
+        string_rendered = font.render(line, 1, pygame.Color('Black'))
         intro_rect = string_rendered.get_rect()
         text_coord += 10
         intro_rect.top = text_coord
@@ -241,6 +241,7 @@ class Minesweeper(Board):
         # Перечисление ресурсов
         flag_image = load_image("flag.png", -1)
         unready_image = load_image("unready.png", -1)
+        clock_image = load_image("clock.png", -1)
         # Текст с оставшимися флажками
         font = pygame.font.Font(None, 50)
         text = font.render(str(self.num_bomb - count_flag), 1, (255, 255, 255))
@@ -254,6 +255,20 @@ class Minesweeper(Board):
         flag.rect = flag.image.get_rect()
         flag.rect.x = self.cell_size * self.width + self.top + 20
         flag.rect.y = 10
+        # Отсчёт времени
+        tit2 = time.time()
+        font = pygame.font.Font(None, 50)
+        text = font.render(str(round(tit2 - tit1)), 1, (255, 255, 255))
+        text_x = self.cell_size * self.width + self.top + 50
+        text_y = 50
+        text_w = text.get_width()
+        text_h = text.get_height()
+        screen.blit(text, (text_x, text_y))
+        clock = pygame.sprite.Sprite(ui_sprites)
+        clock.image = clock_image
+        clock.rect = clock.image.get_rect()
+        clock.rect.x = self.cell_size * self.width + self.top + 20
+        clock.rect.y = 50
         for i in range(self.width):
             for j in range(self.height):
                 if self.mark_board[i][j] == 1:
