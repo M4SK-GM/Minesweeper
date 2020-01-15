@@ -61,8 +61,18 @@ def start_screen():
 
 
 def End_Screen():
+    pygame.mixer.music.stop()
+    lose = pygame.mixer.Sound("data/lose.wav")
+    lose.play()
     intro_text = ["Вы проиграли!", "",
-                  "В следующий раз будьте аккуратнее и внимательнее!"]
+                  "В следующий раз будьте аккуратнее и внимательнее!", "",
+                  "Советы по игре:", "",
+                  "Всегда смотрите, сколько мин осталось отметить ещё",
+                  "Нажимайте, только если уверены, что в клетке нет мины",
+                  "Пытайтесь рассуждать, думать логически",
+                  "Если не уверены, то вы всегда можете отметить клетку знаком '?' и вернуться к ней позже",
+                  "Больше тренируйтесь, и всё получится",
+                  "Удачи!"]
 
     fon = pygame.transform.scale(load_image('fon.jpg'), (width, height))
     screen.blit(fon, (0, 0))
@@ -88,8 +98,14 @@ def End_Screen():
 
 
 def Win_Screen():
+    clock_image = load_image("clock.png", -1)
+    clocking = pygame.sprite.Sprite(ui_sprites)
+    clocking.image = clock_image
+    clocking.rect = clocking.image.get_rect()
+    clocking.rect.x = 180
+    clocking.rect.y = 50
     tit2 = time.time()
-    score = size ** 2 / count_bomb * round(tit2 - tit1)
+    score = round(board_size ** 3 / count_bomb / round(tit2 - tit1))
     whoisiam = cur.execute('''SELECT * FROM ListofScore WHERE Name=?''', (name,)).fetchone()
     if whoisiam is None:
         cur.execute('''INSERT INTO ListofScore(Name, Score) VALUES(?, ?)''', (name, score))
@@ -100,7 +116,7 @@ def Win_Screen():
                             WHERE Name=?''', (score, name))
     con.commit()
     result = cur.execute("""SELECT * FROM ListofScore
-                ORDER BY Score ASC""").fetchmany(10)
+                ORDER BY Score DESC""").fetchmany(10)
     intro_text = ["Победа!!", "",
                   "Вы справились!",
                   "Ваш результат:",
@@ -269,6 +285,56 @@ class Minesweeper(Board):
         clock.rect = clock.image.get_rect()
         clock.rect.x = self.cell_size * self.width + self.top + 20
         clock.rect.y = 50
+        # Текущие очки
+        font = pygame.font.Font(None, 30)
+        if tit2 - tit1 > 1:
+            text = font.render((f"Тек. количество очков: "
+                                f"{round(board_size ** 4 / count_bomb / round(tit2 - tit1))}"), 1, (255, 255, 255))
+        else:
+            text = font.render((f"Тек. количество очков: "
+                                f"0"), 1, (255, 255, 255))
+        text_x = self.cell_size * self.width + self.top + 20
+        text_y = 90
+        text_w = text.get_width()
+        text_h = text.get_height()
+        screen.blit(text, (text_x, text_y))
+        # Данные
+        intro_text = ["Данные игрока:",
+                      f"Имя: {name}",
+                      f"Размер поля: {board_size}x{board_size}",
+                      f"Количество мин на поле: {count_bomb}"]
+        res = whoisiam = cur.execute('''SELECT Score FROM ListofScore WHERE Name=?''', (name,)).fetchone()
+        if res is not None:
+            intro_text.append(f"Прошлый рекорд: {res[0]} очков")
+        else:
+            intro_text.append("Прошлый рекорд: нет")
+        font = pygame.font.Font(None, 30)
+        text_coord_x = self.cell_size * self.width + self.top + 20
+        text_coord_y = 130
+        for line in intro_text:
+            string_rendered = font.render(line, 1, pygame.Color('White'))
+            text_coord_y += 30
+            screen.blit(string_rendered, (text_coord_x, text_coord_y))
+        # Правила
+        intro_text = ["Правила игры:",
+                      "1. Число в ячейке показывает, сколько мин скрыто вокруг данной ячейки.",
+                      "Это число поможет понять вам, где находятся безопасные ячейки, а где находятся бомбы.",
+                      "2. Если рядом с открытой ячейкой есть пустая ячейка, то она откроется автоматически.",
+                      "3. Если вы открыли ячейку с миной, то игра проиграна..",
+                      "4. Что бы пометить ячейку, в которой находится бомба, нажмите её правой кнопкой мыши.",
+                      "5. Если в ячейке указано число, оно показывает, сколько мин скрыто в восьми ячейках вокруг данной.",
+                      "Это число помогает понять, где находятся безопасные ячейки.",
+                      "6.Игра продолжается до тех пор, пока вы не отметите все заминированные ячейки"]
+        font = pygame.font.Font(None, 30)
+        text_coord = self.cell_size * board_size + 30
+        for line in intro_text:
+            string_rendered = font.render(line, 1, pygame.Color('White'))
+            intro_rect = string_rendered.get_rect()
+            text_coord += 10
+            intro_rect.top = text_coord
+            intro_rect.x = 10
+            text_coord += intro_rect.height
+            screen.blit(string_rendered, intro_rect)
         for i in range(self.width):
             for j in range(self.height):
                 if self.mark_board[i][j] == 1:
@@ -297,6 +363,7 @@ class Minesweeper(Board):
 
     def mark_cell(self, position):
         global count_flag
+        click = pygame.mixer.Sound("data/click.wav")
         if self.get_cell(position) is None:
             return
         x, y = self.get_cell(position)
@@ -320,6 +387,7 @@ class Minesweeper(Board):
                 x1, y1 = self.get_cell((unready.rect.x, unready.rect.y))
                 if x == x1 and y == y1:
                     pygame.sprite.Sprite.kill(unready)
+        click.play()
 
     def check_win(self):
         if count_flag != self.num_bomb:
@@ -333,7 +401,7 @@ class Minesweeper(Board):
 
 
 count_bomb = 0
-size = 0
+board_size = 0
 
 
 class Example(QWidget):
@@ -348,25 +416,27 @@ class Example(QWidget):
         self.show()
 
     def run(self):
-        global name, size, count_bomb
+        global name, board_size, count_bomb
         i, okBtnPressed = QInputDialog.getText(self, "Введите имя",
                                                "Как тебя зовут?")
         if okBtnPressed:
             name = i
             i, okBtnPressed = QInputDialog.getText(self, "Размеры поля",
-                                                   "Какие размеры поля будут использоваться?")
+                                                   "Какие размеры поля будут использоваться?(не больше 20)")
             if okBtnPressed:
                 if i == "":
-                    size = 10
+                    board_size = 10
+                elif int(i) > 20:
+                    board_size = 20
                 else:
-                    size = int(i)
-                    while count_bomb == 0:
-                        i, okBtnPressed = QInputDialog.getText(self, "Количество бомб",
-                                                               "Сколько бомб будет на поле?")
-                        if i == "":
-                            continue
-                        if okBtnPressed and size * size > int(i):
-                            count_bomb = int(i)
+                    board_size = int(i)
+                while count_bomb == 0:
+                    i, okBtnPressed = QInputDialog.getText(self, "Количество бомб",
+                                                           "Сколько бомб будет на поле?")
+                    if i == "":
+                        continue
+                    if okBtnPressed and board_size * board_size > int(i):
+                        count_bomb = int(i)
 
 
 all_sprites = pygame.sprite.Group()
@@ -374,10 +444,10 @@ ui_sprites = pygame.sprite.Group()
 app = QApplication(sys.argv)
 ex = Example()
 ex.close()
-if size == 0:
-    size = 10
-    count_bomb = 10
-mineboard = Minesweeper(size, size, count_bomb)
+if board_size == 0:
+    board_size = 10
+    board_count_bomb = 10
+mineboard = Minesweeper(board_size, board_size, count_bomb)
 size = width, height = 1000, 1000
 screen = pygame.display.set_mode(size)
 running = True
@@ -386,6 +456,9 @@ count_flag = 0
 start_screen()
 screen.fill(pygame.Color('black'))
 tit1 = time.time()
+pygame.mixer.music.load('data/Hanging_Out.mp3')
+pygame.mixer.music.set_volume(0.1)
+pygame.mixer.music.play(loops=-1)
 while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
