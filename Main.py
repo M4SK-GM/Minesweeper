@@ -1,8 +1,12 @@
-import pygame, random, sys, os, time
+import pygame, random, sys, os, time, sqlite3
+from PyQt5.QtWidgets import QInputDialog, QWidget, QApplication
 
+con = sqlite3.connect(os.path.join("data", "ListofScore.db"))
+cur = con.cursor()
 fps = 5
 clock = pygame.time.Clock()
 pygame.init()
+name = ""
 
 
 def terminate():
@@ -85,10 +89,26 @@ def End_Screen():
 
 def Win_Screen():
     tit2 = time.time()
-    print(tit2 - tit1)
+    score = size ** 2 / count_bomb * round(tit2 - tit1)
+    whoisiam = cur.execute('''SELECT * FROM ListofScore WHERE Name=?''', (name,)).fetchone()
+    if whoisiam is None:
+        cur.execute('''INSERT INTO ListofScore(Name, Score) VALUES(?, ?)''', (name, score))
+    else:
+        if whoisiam[1] > score:
+            cur.execute('''UPDATE ListofScore
+                            SET Score=?
+                            WHERE Name=?''', (score, name))
+    con.commit()
+    result = cur.execute("""SELECT * FROM ListofScore
+                ORDER BY Score ASC""").fetchmany(10)
     intro_text = ["Победа!!", "",
-                  "Вы справились!"]
-
+                  "Вы справились!",
+                  "Ваш результат:",
+                  f"{round(tit2 - tit1)} секунд(ы)!",
+                  f"Количество очков: {score}", "",
+                  "Лучшие результаты:", ""]
+    for i in result:
+        intro_text.append(f"{i[0]}..........{i[1]}")
     fon = pygame.transform.scale(load_image('fon.jpg'), (width, height))
     screen.blit(fon, (0, 0))
     font = pygame.font.Font(None, 30)
@@ -112,7 +132,7 @@ def Win_Screen():
         clock.tick(fps)
 
 
-class Board:
+class Board():
     # создание поля
     def __init__(self, width, height):
         self.width = width
@@ -219,7 +239,6 @@ class Minesweeper(Board):
 
     def render(self):
         # Перечисление ресурсов
-        bomb_image = load_image("Bomb.png", -1)
         flag_image = load_image("flag.png", -1)
         unready_image = load_image("unready.png", -1)
         # Текст с оставшимися флажками
@@ -298,9 +317,52 @@ class Minesweeper(Board):
         Win_Screen()
 
 
+count_bomb = 0
+size = 0
+
+
+class Example(QWidget):
+    def __init__(self):
+        super().__init__()
+        self.initUI()
+
+    def initUI(self):
+        self.setGeometry(300, 300, 150, 150)
+        self.setWindowTitle('Диалоговые окна')
+        self.run()
+        self.show()
+
+    def run(self):
+        global name, size, count_bomb
+        i, okBtnPressed = QInputDialog.getText(self, "Введите имя",
+                                               "Как тебя зовут?")
+        if okBtnPressed:
+            name = i
+            i, okBtnPressed = QInputDialog.getText(self, "Размеры поля",
+                                                   "Какие размеры поля будут использоваться?")
+            if okBtnPressed:
+                if i == "":
+                    size = 10
+                else:
+                    size = int(i)
+                    while count_bomb == 0:
+                        i, okBtnPressed = QInputDialog.getText(self, "Количество бомб",
+                                                               "Сколько бомб будет на поле?")
+                        if i == "":
+                            continue
+                        if okBtnPressed and size * size > int(i):
+                            count_bomb = int(i)
+
+
 all_sprites = pygame.sprite.Group()
 ui_sprites = pygame.sprite.Group()
-mineboard = Minesweeper(10, 10, 10)
+app = QApplication(sys.argv)
+ex = Example()
+ex.close()
+if size == 0:
+    size = 10
+    count_bomb = 10
+mineboard = Minesweeper(size, size, count_bomb)
 size = width, height = 1000, 1000
 screen = pygame.display.set_mode(size)
 running = True
@@ -328,10 +390,4 @@ while running:
     mineboard.check_win()
     mineboard.render()
     pygame.display.flip()
-
-'''                if self.board[i][j] == 10:
-                    bomb = pygame.sprite.Sprite(all_sprites)
-                    bomb.image = bomb_image
-                    bomb.rect = bomb.image.get_rect()
-                    bomb.rect.x = self.cell_size * i + self.left
-                    bomb.rect.y = self.cell_size * j + self.top'''
+con.close()
