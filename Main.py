@@ -419,7 +419,7 @@ count_bomb = 0
 board_size = 0
 
 
-class Example(QWidget):
+class Start(QWidget):
     def __init__(self):
         super().__init__()
         self.initUI()
@@ -457,7 +457,7 @@ class Example(QWidget):
 all_sprites = pygame.sprite.Group()
 ui_sprites = pygame.sprite.Group()
 app = QApplication(sys.argv)
-ex = Example()
+ex = Start()
 ex.close()
 if board_size == 0:
     board_size = 10
