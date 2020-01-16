@@ -111,7 +111,7 @@ def Win_Screen():
     if whoisiam is None:
         cur.execute('''INSERT INTO ListofScore(Name, Score) VALUES(?, ?)''', (name, score))
     else:
-        if whoisiam[1] > score:
+        if whoisiam[1] < score:
             cur.execute('''UPDATE ListofScore
                             SET Score=?
                             WHERE Name=?''', (score, name))
