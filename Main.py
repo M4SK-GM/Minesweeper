@@ -63,7 +63,8 @@ def start_screen():
 def End_Screen():
     pygame.mixer.music.stop()
     lose = pygame.mixer.Sound("data/lose.wav")
-    lose.play()
+    if not mute_status:
+        lose.play()
     intro_text = ["Вы проиграли!", "",
                   "В следующий раз будьте аккуратнее и внимательнее!", "",
                   "Советы по игре:", "",
@@ -315,6 +316,19 @@ class Minesweeper(Board):
             string_rendered = font.render(line, 1, pygame.Color('White'))
             text_coord_y += 30
             screen.blit(string_rendered, (text_coord_x, text_coord_y))
+        # Управление
+        intro_text = ["Управление игры:",
+                      "ЛКМ - открыть ячейку",
+                      "ПКМ - сменить состояние ячейки",
+                      "SPACE/Пробел - сменить песню",
+                      "M - отключить звуки"]
+        font = pygame.font.Font(None, 30)
+        text_coord_x = self.cell_size * self.width + self.top + 20
+        text_coord_y = 320
+        for line in intro_text:
+            string_rendered = font.render(line, 1, pygame.Color('White'))
+            text_coord_y += 30
+            screen.blit(string_rendered, (text_coord_x, text_coord_y))
         # Правила
         intro_text = ["Правила игры:",
                       "1. Число в ячейке показывает, сколько мин скрыто вокруг данной ячейки.",
@@ -387,7 +401,8 @@ class Minesweeper(Board):
                 x1, y1 = self.get_cell((unready.rect.x, unready.rect.y))
                 if x == x1 and y == y1:
                     pygame.sprite.Sprite.kill(unready)
-        click.play()
+        if not mute_status:
+            click.play()
 
     def check_win(self):
         if count_flag != self.num_bomb:
@@ -456,9 +471,12 @@ count_flag = 0
 start_screen()
 screen.fill(pygame.Color('black'))
 tit1 = time.time()
+music_list = ["data/Hanging_Out.mp3", "data/Night_Snow.mp3", "data/Slow_Times_Over_Here.mp3"]
+music = 0
 pygame.mixer.music.load('data/Hanging_Out.mp3')
 pygame.mixer.music.set_volume(0.1)
 pygame.mixer.music.play(loops=-1)
+mute_status = False
 while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -472,6 +490,23 @@ while running:
                 if not boardready:
                     continue
                 mineboard.mark_cell(event.pos)
+        if event.type == pygame.KEYDOWN:
+            if event.key == 32 and not mute_status:
+                music = (music + 1) % 3
+                pygame.mixer.music.load(music_list[music])
+                pygame.mixer.music.set_volume(0.1)
+                pygame.mixer.music.play(loops=-1)
+            elif event.key == 109:
+                if mute_status:
+                    mute_status = False
+                    music = (music + 1) % 3
+                    pygame.mixer.music.load(music_list[music])
+                    pygame.mixer.music.set_volume(0.1)
+                    pygame.mixer.music.play(loops=-1)
+                else:
+                    mute_status = True
+                    pygame.mixer.music.stop()
+
     screen.fill(pygame.Color('black'))
     all_sprites.draw(screen)
     ui_sprites.draw(screen)
