@@ -249,7 +249,7 @@ class Minesweeper(Board):
         while i != self.num_bomb:
             randx = random.randint(0, self.width - 1)
             randy = random.randint(0, self.height - 1)
-            if self.board[randy][randx] == -1 and (randx != x and randy != y):
+            if self.board[randy][randx] == -1 and (randy != x and randx != y):
                 i += 1
                 self.board[randy][randx] = 10
         return True
@@ -340,7 +340,7 @@ class Minesweeper(Board):
                       "Это число помогает понять, где находятся безопасные ячейки.",
                       "6.Игра продолжается до тех пор, пока вы не отметите все заминированные ячейки"]
         font = pygame.font.Font(None, 30)
-        text_coord = self.cell_size * board_size + 30
+        text_coord = 650
         for line in intro_text:
             string_rendered = font.render(line, 1, pygame.Color('White'))
             intro_rect = string_rendered.get_rect()
@@ -368,9 +368,13 @@ class Minesweeper(Board):
                                      (self.cell_size * i + self.left, self.cell_size * j + self.top, self.cell_size - 2,
                                       self.cell_size - 2))
                 if -1 < self.board[i][j] < 10:
-                    font = pygame.font.Font(None, 50)
-                    text = font.render(str(self.board[i][j]), 1, (100, 255, 100))
-                    screen.blit(text, (self.cell_size * i + self.left, self.cell_size * j + self.top))
+                    pygame.draw.rect(screen, (50, 50, 50),
+                                     (self.cell_size * i + self.left, self.cell_size * j + self.top, self.cell_size,
+                                      self.cell_size))
+                    if 0 < self.board[i][j] < 10:
+                        font = pygame.font.Font(None, 50)
+                        text = font.render(str(self.board[i][j]), 1, (255, 255, 255))
+                        screen.blit(text, (self.cell_size * i + self.left, self.cell_size * j + self.top))
                 pygame.draw.rect(screen, (255, 255, 255),
                                  (self.cell_size * i + self.left, self.cell_size * j + self.top, self.cell_size,
                                   self.cell_size), 1)
@@ -416,7 +420,7 @@ class Minesweeper(Board):
 
 
 count_bomb = 0
-board_size = 0
+board_size = 10
 
 
 class Start(QWidget):
@@ -459,9 +463,8 @@ ui_sprites = pygame.sprite.Group()
 app = QApplication(sys.argv)
 ex = Start()
 ex.close()
-if board_size == 0:
-    board_size = 10
-    board_count_bomb = 10
+if count_bomb == 0:
+    count_bomb = 10
 mineboard = Minesweeper(board_size, board_size, count_bomb)
 size = width, height = 1000, 1000
 screen = pygame.display.set_mode(size)
