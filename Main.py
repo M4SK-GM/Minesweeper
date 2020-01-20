@@ -368,12 +368,12 @@ class Minesweeper(Board):
                                      (self.cell_size * i + self.left, self.cell_size * j + self.top, self.cell_size - 2,
                                       self.cell_size - 2))
                 if -1 < self.board[i][j] < 10:
-                    pygame.draw.rect(screen, (50, 50, 50),
+                    pygame.draw.rect(screen, (200, 200, 200),
                                      (self.cell_size * i + self.left, self.cell_size * j + self.top, self.cell_size,
                                       self.cell_size))
                     if 0 < self.board[i][j] < 10:
                         font = pygame.font.Font(None, 50)
-                        text = font.render(str(self.board[i][j]), 1, (255, 255, 255))
+                        text = font.render(str(self.board[i][j]), 1, (100, 100, 100))
                         screen.blit(text, (self.cell_size * i + self.left, self.cell_size * j + self.top))
                 pygame.draw.rect(screen, (255, 255, 255),
                                  (self.cell_size * i + self.left, self.cell_size * j + self.top, self.cell_size,
